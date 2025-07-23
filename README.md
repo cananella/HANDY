@@ -30,7 +30,7 @@ We use [`uv`](https://github.com/astral-sh/uv), a modern Python package manager,
 curl -Ls https://astral.sh/uv/install.sh | sh
 
 # 2. Clone the repository
-git clone https://github.com/AuTURBO/HANDY.git
+git clone --recurse-submodules https://github.com/AuTURBO/HANDY.git
 cd HANDY
 
 # 3. Add dependencies
