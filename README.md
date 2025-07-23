@@ -2,7 +2,7 @@
 
 **HANDY** (Humanoid Agent for Navigating and Doing for You) is an open-source project that develops a humanoid robot assistant capable of navigating realistic environments and performing household tasks — intelligently, autonomously, and in simulation.
 
-Built on top of [ManiSkill3](https://github.com/haosulab/ManiSkill3), HANDY provides simulation-ready environments, modular agents, and embodied task implementations to support research in home robotics, cognitive control, and embodied AI.
+Built on top of [ManiSkill3](https://github.com/haosulab/ManiSkill), HANDY provides simulation-ready environments, modular agents, and embodied task implementations to support research in home robotics, cognitive control, and embodied AI.
 
 
 ## Project Goals
