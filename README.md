@@ -46,6 +46,13 @@ uv add ./third_party/ManiSkill
 - `pyproject.toml` — Project configuration for Python and uv
 - `uv.lock` — Reproducible dependency lockfile (used by uv)
 
+# Supported Robots
+HANDY supports various robots available in ManiSkill3,
+but we primarily use the **[ROBOTIS AI Worker](https://ai.robotis.com/)** as the main robot platform for our simulations and tasks.
+The AI Worker is a semi-humanoid (25 DOF) robot optimized for bimanual manipulation, ROS 2 integration, and Physical AI workflows—offering seamless simulation, teleoperation, and autonomous policy execution.
+
+The AI Worker model is integrated into our project and serves as the default agent for embodied task execution.
+
 
 ## Quick Start
 
