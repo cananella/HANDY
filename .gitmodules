@@ -1,0 +1,6 @@
+[submodule "third_party/robotis_mujoco_menagerie"]
+	path = third_party/robotis_mujoco_menagerie
+	url = https://github.com/AuTURBO/robotis_mujoco_menagerie.git
+[submodule "third_party/ManiSkill"]
+	path = third_party/ManiSkill
+	url = https://github.com/AuTURBO/ManiSkill.git
