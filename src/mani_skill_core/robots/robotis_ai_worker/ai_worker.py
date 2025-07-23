@@ -61,6 +61,26 @@ class AIWorker(BaseAgent):
                 near=0.01,
                 far=100,
                 mount=self.robot.links_map["head_link2"],
+            ),
+            CameraConfig(
+                uid="left_arm_wrist_camera",
+                pose=sapien.Pose(p=[0.105, 0.0, -0.08], q=[0.7071,0,0.7071,0]),
+                width=128,
+                height=128,
+                fov=np.pi / 2,
+                near=0.01,
+                far=100,
+                mount=self.robot.links_map["arm_l_link7"],
+            ),
+            CameraConfig(
+                uid="right_arm_wrist_camera",
+                pose=sapien.Pose(p=[0.105, 0.0, -0.08], q=[0.7071,0,0.7071,0]),
+                width=128,
+                height=128,
+                fov=np.pi / 2,
+                near=0.01,
+                far=100,
+                mount=self.robot.links_map["arm_r_link7"],
             )
         ]
     
