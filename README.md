@@ -49,7 +49,7 @@ uv add ./third_party/ManiSkill
 
 ## Quick Start
 
-> 📦 Coming soon: Task installation instructions, pretrained policies, and evaluation scripts.
+> uv run python projects/spatial_memory/robot_test.py -r "ai_worker"
 
 
 ## Citation
