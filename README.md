@@ -35,7 +35,6 @@ cd HANDY
 
 # 3. Add dependencies
 uv add torch
-uv add ./third_party/ManiSkill
 ```
 
 ## Project Structure (Top Level)
