@@ -1,2 +1,0 @@
-mani-skill
-torch>=2.7.1
