@@ -10,7 +10,7 @@ dependencies = [
 ]
 
 [tool.uv.sources]
-mani-skill = { path = "third_party/ManiSkill" }
+mani-skill = { path = "third_party/ManiSkill", editable = true }
 
 
 
