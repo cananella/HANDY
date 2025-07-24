@@ -422,7 +422,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "mani-skill", directory = "third_party/ManiSkill" },
+    { name = "mani-skill", editable = "third_party/ManiSkill" },
     { name = "torch", specifier = ">=2.7.1" },
 ]
 
@@ -762,7 +762,7 @@ wheels = [
 [[package]]
 name = "mani-skill"
 version = "3.0.0b21"
-source = { directory = "third_party/ManiSkill" }
+source = { editable = "third_party/ManiSkill" }
 dependencies = [
     { name = "dacite" },
     { name = "fast-kinematics", marker = "sys_platform == 'linux'" },
