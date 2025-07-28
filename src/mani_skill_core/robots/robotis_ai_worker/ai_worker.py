@@ -104,6 +104,7 @@ class AIWorker(BaseAgent):
             upper=self.base_upper,
             damping=800,
             force_limit=500,
+            normalize_action=False,
         )
 
         arm_l = PDJointPosControllerConfig(
@@ -113,6 +114,7 @@ class AIWorker(BaseAgent):
             stiffness=arm_stiffness,
             damping=arm_damping,
             force_limit=arm_force,
+            normalize_action=False,
         )
         arm_r = PDJointPosControllerConfig(
             joint_names=self.arm_r_joints,
@@ -121,6 +123,7 @@ class AIWorker(BaseAgent):
             stiffness=arm_stiffness,
             damping=arm_damping,
             force_limit=arm_force,
+            normalize_action=False,
         )
 
         gripper_l_1 = PDJointPosMimicControllerConfig(
