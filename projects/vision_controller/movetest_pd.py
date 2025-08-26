@@ -3,63 +3,109 @@ import time
 import numpy as np
 import torch
 import cv2
+from mani_skill.utils import common
+from mani_skill.envs.sapien_env import BaseEnv
+import ai_worker_custom
+
+from mani_skill.utils import common, visualization
 from mani_skill.agents.controllers.base_controller import DictController
 from mani_skill.agents.controllers.base_controller import CombinedController
 from mani_skill.agents.controllers.pd_joint_pos import PDJointPosController
 
-
-from mani_skill.envs.sapien_env import BaseEnv
-# ManiSkill 환경 로드
 env = gym.make(
-    "Empty-v1",  # 빈 환경 (바닥만 있음)
+    "Empty-v1",
     obs_mode="none",
     reward_mode="none",
-    render_mode="human",  # GUI 렌더링
-    control_mode="pd_joint_pos",  # 조인트 위치 제어
-    robot_uids="panda",  # 로봇 종류 (ai_worker 등 다른 모델도 가능)
+    render_mode="human",
+    robot_uids="ai_worker",
+    control_mode="pd_joint_pos",
+    sim_backend="auto",
+    sim_config=dict(sim_freq=100, control_freq=20),
 )
-
-# 환경 초기화
-env.reset()
-
-# 현재 qpos의 shape 확인
+env.reset(seed=0)
+env: BaseEnv = env.unwrapped
+print("Selected Robot has the following keyframes to view: ")
+print(env.agent.keyframes.keys())
 qpos = env.agent.robot.get_qpos()
-print("qpos shape:", qpos.shape)  # (1, N) 형태
+joint_names = env.agent.robot.get_active_joints()
+print(len(qpos[0]))
+print(len(joint_names))
+# print(type(qpos[0]))
+# print(type(joint_names))
+# for key in joint_names:
+#     print(f"{type(key)}")
+qpos[0][4] = 0.4
+kf = None
+keyframe = "store_true"
+if len(env.agent.keyframes) > 0:
+    kf_name = None
+    if keyframe is not None:
+        kf_name = keyframe
+        kf = env.agent.keyframes[kf_name]
+    else:
+        for kf_name, kf in env.agent.keyframes.items():
+            # keep the first keyframe we find
+            break
+    if kf.qpos is not None:
+        env.agent.robot.set_qpos(kf.qpos)
+        env.agent.controller.reset()
+    if kf.qvel is not None:
+        env.agent.robot.set_qvel(kf.qvel)
+    env.agent.robot.set_pose(kf.pose)
+    if kf_name is not None:
+        print(f"Viewing keyframe {kf_name}")
+if env.gpu_sim_enabled:
+    env.scene._gpu_apply_all()
+    env.scene.px.gpu_update_articulation_kinematics()
+    env.scene._gpu_fetch_all()
+print(kf)
 
-# 조인트 이름과 순서 확인
-joint_names = env.agent.robot.joints
-print("조인트 순서:")
-for i, name in enumerate(joint_names):
-    print(f"{i}: {name}")
-
-qpos = env.agent.robot.get_qpos()
-print("qpos shape:", qpos.shape)  # (1, 8)
-
-# 전체 조인트에서 앞에서부터 N개가 제어 대상인 경우:
-controlled_joints = env.agent.arm_joint_names[:qpos.shape[1]]
-print(f"{controlled_joints} 조인트 이름:")
-print("제어 대상 조인트:")
-for i, name in enumerate(controlled_joints):
-    print(f"{i}: {name}")
-
-
-# 예시 조인트 위치 (panda_joint1~7 + panda_finger_joint1)
-# 8개의 조인트 → shape (1, 8)
-target_joint_angles = np.array([[  # <-- 2차원으로 만들어야 함
-    0.0,     # joint1
-    -0.5,    # joint2
-    0.0,     # joint3
-    -1.5,    # joint4
-    0.0,     # joint5
-    1.0,     # joint6
-    0.5,     # joint7
-    0.04     # finger_joint1 (보통 하나만 제어하면 양쪽에 적용됨)
-]])
-
-# 실행
+flag = True
+def is_close(a, b, tol=1e-3):
+    return np.allclose(a, b, atol=tol)
+time_now = time.time()
 while True:
-    obs, reward, terminated, truncated, info = env.step(action=target_joint_angles)
-    time.sleep(1 / 60)
-    env.render()
+    if True:
+        env.render_human()
+
+    if after_reset:
+        after_reset = False
+        # Re-focus on opencv viewer
+        if True:
+            renderer.close()
+            renderer = visualization.ImageRenderer()
+            pass
+
+    if env.viewer.window.key_press("q"):
+        break
 
 env.close()
+# kf = None
+# if len(env.agent.keyframes) > 0:
+#     kf_name = None
+#     if args.keyframe is not None:
+#         kf_name = args.keyframe
+#         kf = env.agent.keyframes[kf_name]
+#     else:
+#         for kf_name, kf in env.agent.keyframes.items():
+#             # keep the first keyframe we find
+#             break
+#     if kf.qpos is not None:
+#         env.agent.robot.set_qpos(kf.qpos)
+#         env.agent.controller.reset()
+#     if kf.qvel is not None:
+#         env.agent.robot.set_qvel(kf.qvel)
+#     env.agent.robot.set_pose(kf.pose)
+#     if kf_name is not None:
+#         print(f"Viewing keyframe {kf_name}")
+# if env.gpu_sim_enabled:
+#     env.scene._gpu_apply_all()
+#     env.scene.px.gpu_update_articulation_kinematics()
+#     env.scene._gpu_fetch_all()
+# viewer = env.render()
+# viewer.paused = True
+# viewer = env.render()
+
+
+
+
