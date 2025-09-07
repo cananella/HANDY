@@ -26,14 +26,14 @@ def main():
     env.reset(seed=0)
     env: BaseEnv = env.unwrapped
     controller : CombinedController = env.agent.controller
-    for name, sub in controller.controllers.items():
-        if hasattr(sub, "balance_passive_force"):
-            sub.balance_passive_force = True
+    # for name, sub in controller.controllers.items():
+    #     if hasattr(sub, "balance_passive_force"):
+    #         sub.balance_passive_force = True
 
-    print("balance_passive_force:",
-        getattr(controller, "balance_passive_force", None),
-        [(n, getattr(c, "balance_passive_force", None)) for n,c in controller.controllers.items()])
-    env.agent.robot.set_qpos(env.agent.robot.qpos * 0)
+    # print("balance_passive_force:",
+    #     getattr(controller, "balance_passive_force", None),
+    #     [(n, getattr(c, "balance_passive_force", None)) for n,c in controller.controllers.items()])
+    # env.agent.robot.set_qpos(env.agent.robot.qpos * 0)
 
     
     zero_action_dict = {}
@@ -45,13 +45,13 @@ def main():
     zero = controller.from_action_dict(zero_action_dict)
 
     
-    try:
-        for _ in range(50):      # 0.5초 정도 정착
-            env.step(zero)
-    except Exception:
-        zero_batched = zero[None, ...]  # (1, dof)
-        for _ in range(50):
-            env.step(zero_batched)
+    # try:
+    #     for _ in range(50):      # 0.5초 정도 정착
+    #         env.step(zero)
+    # except Exception:
+    #     zero_batched = zero[None, ...]  # (1, dof)
+    #     for _ in range(50):
+    #         env.step(zero_batched)
 
     robot = env.agent
     print(type(controller))
@@ -112,15 +112,15 @@ def main():
             if flag:
                 left_arm_qpos[0] = -1.1
                 left_arm_qpos[1] = 1.0
-                head_qpos[0] = -0.2
-                head_qpos[1] = -0.35
+                head_qpos[0] = -0.0
+                head_qpos[1] = -0.0
                 lift_qpos[0] = 0.25
                 flag = False
             else:
                 left_arm_qpos[0] = 1.1
                 left_arm_qpos[1] = 0.0
-                head_qpos[0] = 0.6
-                head_qpos[1] = 0.35
+                head_qpos[0] = 0.0
+                head_qpos[1] = 0.0
                 lift_qpos[0] = 0.0
                 flag = True
             all_qpos.update({

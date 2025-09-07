@@ -106,6 +106,7 @@ class AIWorker(BaseAgent):
             damping=10000,
             # force_limit=500,
             normalize_action=False,
+            drive_mode="acceleration",
         )
 
         arm_l = PDJointPosControllerConfig(
