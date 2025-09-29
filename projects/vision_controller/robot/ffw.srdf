@@ -1,0 +1,94 @@
+<?xml version="1.0" ?>
+<robot name="ffw">
+  <!-- world/base chain -->
+  <disable_collisions link1="world" link2="dummy_world_to_base_link_1" reason="Adjacent"/>
+  <disable_collisions link1="dummy_world_to_base_link_1" link2="dummy_world_to_base_link_2" reason="Adjacent"/>
+  <disable_collisions link1="dummy_world_to_base_link_2" link2="base_link" reason="Adjacent"/>
+
+  <!-- lift & torso -->
+  <disable_collisions link1="base_link" link2="arm_base_link" reason="Adjacent"/>
+
+  
+
+  <!-- head -->
+  <disable_collisions link1="arm_base_link" link2="head_link1" reason="Adjacent"/>
+  <disable_collisions link1="head_link1" link2="head_link2" reason="Adjacent"/>
+  <disable_collisions link1="head_link2" link2="arm_base_link" reason="Adjacent"/>
+  <!-- head close neighbors -->
+  <disable_collisions link1="arm_base_link" link2="head_link2" reason="Never"/>
+  <disable_collisions link1="base_link" link2="head_link1" reason="Never"/>
+  <disable_collisions link1="base_link" link2="head_link2" reason="Never"/>
+
+  <!-- left arm chain -->
+  <disable_collisions link1="arm_base_link" link2="arm_l_link1" reason="Adjacent"/>
+  <disable_collisions link1="arm_l_link1" link2="arm_l_link2" reason="Adjacent"/>
+  <disable_collisions link1="arm_l_link2" link2="arm_l_link3" reason="Adjacent"/>
+  <disable_collisions link1="arm_l_link3" link2="arm_l_link4" reason="Adjacent"/>
+  <disable_collisions link1="arm_l_link4" link2="arm_l_link5" reason="Adjacent"/>
+  <disable_collisions link1="arm_l_link5" link2="arm_l_link6" reason="Adjacent"/>
+  <disable_collisions link1="arm_l_link6" link2="arm_l_link7" reason="Adjacent"/>
+
+  <!-- left arm close neighbors (next-nearest) -->
+  <disable_collisions link1="arm_l_link1" link2="arm_l_link3" reason="Never"/>
+  <disable_collisions link1="arm_l_link2" link2="arm_l_link4" reason="Never"/>
+  <disable_collisions link1="arm_l_link3" link2="arm_l_link5" reason="Never"/>
+  <disable_collisions link1="arm_l_link4" link2="arm_l_link6" reason="Never"/>
+  <disable_collisions link1="arm_l_link5" link2="arm_l_link7" reason="Never"/>
+
+  <!-- left camera mount -->
+  <disable_collisions link1="arm_l_link7" link2="camera_l_bottom_screw_frame" reason="Adjacent"/>
+  <disable_collisions link1="camera_l_bottom_screw_frame" link2="camera_l_link" reason="Adjacent"/>
+  <!-- camera near parent -->
+  <disable_collisions link1="arm_l_link7" link2="camera_l_link" reason="Never"/>
+
+  <!-- left gripper base & fingers -->
+  <disable_collisions link1="arm_l_link7" link2="gripper_l_rh_p12_rn_base" reason="Adjacent"/>
+  <disable_collisions link1="gripper_l_rh_p12_rn_base" link2="gripper_l_rh_p12_rn_r1" reason="Adjacent"/>
+  <disable_collisions link1="gripper_l_rh_p12_rn_r1" link2="gripper_l_rh_p12_rn_r2" reason="Adjacent"/>
+  <disable_collisions link1="gripper_l_rh_p12_rn_base" link2="gripper_l_rh_p12_rn_l1" reason="Adjacent"/>
+  <disable_collisions link1="gripper_l_rh_p12_rn_l1" link2="gripper_l_rh_p12_rn_l2" reason="Adjacent"/>
+  <!-- fingertip self contact off -->
+  <disable_collisions link1="gripper_l_rh_p12_rn_r2" link2="gripper_l_rh_p12_rn_l2" reason="Never"/>
+  <disable_collisions link1="gripper_l_rh_p12_rn_r1" link2="gripper_l_rh_p12_rn_l1" reason="Never"/>
+
+  <!-- right arm chain -->
+  <disable_collisions link1="arm_base_link" link2="arm_r_link1" reason="Adjacent"/>
+  <disable_collisions link1="arm_r_link1" link2="arm_r_link2" reason="Adjacent"/>
+  <disable_collisions link1="arm_r_link2" link2="arm_r_link3" reason="Adjacent"/>
+  <disable_collisions link1="arm_r_link3" link2="arm_r_link4" reason="Adjacent"/>
+  <disable_collisions link1="arm_r_link4" link2="arm_r_link5" reason="Adjacent"/>
+  <disable_collisions link1="arm_r_link5" link2="arm_r_link6" reason="Adjacent"/>
+  <disable_collisions link1="arm_r_link6" link2="arm_r_link7" reason="Adjacent"/>
+
+  <!-- right arm close neighbors -->
+  <disable_collisions link1="arm_r_link1" link2="arm_r_link3" reason="Never"/>
+  <disable_collisions link1="arm_r_link2" link2="arm_r_link4" reason="Never"/>
+  <disable_collisions link1="arm_r_link3" link2="arm_r_link5" reason="Never"/>
+  <disable_collisions link1="arm_r_link4" link2="arm_r_link6" reason="Never"/>
+  <disable_collisions link1="arm_r_link5" link2="arm_r_link7" reason="Never"/>
+
+  <!-- right camera mount -->
+  <disable_collisions link1="arm_r_link7" link2="camera_r_bottom_screw_frame" reason="Adjacent"/>
+  <disable_collisions link1="camera_r_bottom_screw_frame" link2="camera_r_link" reason="Adjacent"/>
+  <disable_collisions link1="arm_r_link7" link2="camera_r_link" reason="Never"/>
+
+  <!-- right gripper base & fingers -->
+  <disable_collisions link1="arm_r_link7" link2="gripper_r_rh_p12_rn_base" reason="Adjacent"/>
+  <disable_collisions link1="gripper_r_rh_p12_rn_base" link2="gripper_r_rh_p12_rn_r1" reason="Adjacent"/>
+  <disable_collisions link1="gripper_r_rh_p12_rn_r1" link2="gripper_r_rh_p12_rn_r2" reason="Adjacent"/>
+  <disable_collisions link1="gripper_r_rh_p12_rn_base" link2="gripper_r_rh_p12_rn_l1" reason="Adjacent"/>
+  <disable_collisions link1="gripper_r_rh_p12_rn_l1" link2="gripper_r_rh_p12_rn_l2" reason="Adjacent"/>
+  <!-- fingertip self contact off -->
+  <disable_collisions link1="gripper_r_rh_p12_rn_r2" link2="gripper_r_rh_p12_rn_l2" reason="Never"/>
+  <disable_collisions link1="gripper_r_rh_p12_rn_r1" link2="gripper_r_rh_p12_rn_l1" reason="Never"/>
+
+  <!-- cross-side proximity likely to contact often; keep off to avoid constant false positives near torso -->
+  <disable_collisions link1="arm_l_link1" link2="arm_base_link" reason="Never"/>
+  <disable_collisions link1="arm_r_link1" link2="arm_base_link" reason="Never"/>
+  <disable_collisions link1="arm_l_link1" link2="base_link" reason="Never"/>
+  <disable_collisions link1="arm_r_link1" link2="base_link" reason="Never"/>
+
+  <!-- cameras vs hands (very close) -->
+  <disable_collisions link1="camera_l_link" link2="gripper_l_rh_p12_rn_base" reason="Never"/>
+  <disable_collisions link1="camera_r_link" link2="gripper_r_rh_p12_rn_base" reason="Never"/>
+</robot>
