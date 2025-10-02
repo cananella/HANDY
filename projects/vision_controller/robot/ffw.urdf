@@ -31,9 +31,10 @@
     <limit effort="100" lower="-5" upper="5" velocity="0.50"/>
     <dynamics damping="10.0" friction="10"/>
   </joint>
-  <joint name="world_to_base_yaw_joint" type="continuous">
+  <joint name="world_to_base_yaw_joint" type="revolute">
     <parent link="dummy_world_to_base_link_2"/>
     <child link="base_link"/>
+    <limit effort="100" lower="-3.14" upper="3.14" velocity="1.0"/>
     <axis xyz="0 0 1"/>
     <dynamics damping="10.0" friction="10"/>
   </joint>    
@@ -588,6 +589,31 @@
       <inertia ixx="1.046318100e-04" ixy="-1.906515900e-05" ixz="1.097223300e-05" iyy="4.514078500e-04" iyz="6.013716400e-07" izz="4.156884400e-04"/>
     </inertial>
   </link>
+  <!-- Tool Control Point -->
+  <link name="left_hand_tcp"/>
+  <joint name="left_hand_tcp_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <parent link="arm_l_link7"/>
+    <child link="left_hand_tcp"/>
+  </joint>
+  <link name="right_hand_tcp"/>
+  <joint name="right_hand_tcp_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
+    <parent link="arm_r_link7"/>
+    <child link="right_hand_tcp"/>
+  </joint>
+  <link name="left_elbow_tcp"/>
+  <joint name="left_elbow_tcp_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="0.04 0.0 -0.13"/>
+    <parent link="arm_l_link3"/>
+    <child link="left_elbow_tcp"/>
+  </joint>
+  <link name="right_elbow_tcp"/>
+  <joint name="right_elbow_tcp_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="0.04 0.0 -0.13"/>
+    <parent link="arm_r_link3"/>
+    <child link="right_elbow_tcp"/>
+  </joint>
   <!-- camera body, with origin at bottom screw mount -->
   <joint name="camera_r_joint" type="fixed">
     <origin rpy="-1.57079632679 1.66678943569 0" xyz="0.108236 -0.021 -0.062552"/>

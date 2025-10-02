@@ -91,4 +91,44 @@
   <!-- cameras vs hands (very close) -->
   <disable_collisions link1="camera_l_link" link2="gripper_l_rh_p12_rn_base" reason="Never"/>
   <disable_collisions link1="camera_r_link" link2="gripper_r_rh_p12_rn_base" reason="Never"/>
+
+    <!-- ===================== GROUPS (for MPLib/MoveIt) ===================== -->
+
+  <!-- Left arm: 7 DOF including wrist pan (arm_l_joint7) -->
+  <group name="left_arm">
+    <joint name="arm_l_joint1"/>
+    <joint name="arm_l_joint2"/>
+    <joint name="arm_l_joint3"/>
+    <joint name="arm_l_joint4"/>
+    <joint name="arm_l_joint5"/>
+    <joint name="arm_l_joint6"/>
+    <joint name="arm_l_joint7"/>
+  </group>
+
+  <!-- Right arm: 7 DOF including wrist pan (arm_r_joint7) -->
+  <group name="right_arm">
+    <joint name="arm_r_joint1"/>
+    <joint name="arm_r_joint2"/>
+    <joint name="arm_r_joint3"/>
+    <joint name="arm_r_joint4"/>
+    <joint name="arm_r_joint5"/>
+    <joint name="arm_r_joint6"/>
+    <joint name="arm_r_joint7"/>
+  </group>
+
+  <!-- (Optional) Gripper groups: 4-DOF each (mimic은 컨트롤러에서 처리됨) -->
+  <group name="left_gripper">
+    <joint name="gripper_l_joint1"/>
+    <joint name="gripper_l_joint2"/>
+    <joint name="gripper_l_joint3"/>
+    <joint name="gripper_l_joint4"/>
+  </group>
+
+  <group name="right_gripper">
+    <joint name="gripper_r_joint1"/>
+    <joint name="gripper_r_joint2"/>
+    <joint name="gripper_r_joint3"/>
+    <joint name="gripper_r_joint4"/>
+  </group>
+
 </robot>

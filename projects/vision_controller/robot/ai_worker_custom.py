@@ -1,6 +1,10 @@
 import os
 import sapien
 import numpy as np
+import numpy as np
+import sapien.physx as physx
+import torch
+from mani_skill.utils import sapien_utils, common
 from mani_skill.utils.structs import *
 from mani_skill.agents.base_agent import BaseAgent, Keyframe
 from mani_skill.agents.controllers import *
@@ -268,7 +272,25 @@ class AIWorker(BaseAgent):
         for link in ["gripper_r_rh_p12_rn_base", "gripper_r_rh_p12_rn_r1", "gripper_r_rh_p12_rn_r2", "gripper_r_rh_p12_rn_l1", "gripper_r_rh_p12_rn_l2"]:
             self.robot.links_map[link].set_collision_group_bit(group=2, bit_idx=3, bit=1)
 
+        self.right_hand_tcp = sapien_utils.get_obj_by_name(self.robot.get_links(), "right_hand_tcp")
+        self.left_hand_tcp = sapien_utils.get_obj_by_name(self.robot.get_links(), "left_hand_tcp")
 
 
     def _load_scene(self, options: dict):
         self.ground.set_collision_group_bit(group=2, bit_idx=30, bit=1) 
+
+    @property
+    def right_hand_tcp_pose(self) -> sapien.Pose:
+        return self.right_hand_tcp.pose
+
+    @property
+    def left_hand_tcp_pose(self) -> sapien.Pose:
+        return self.left_hand_tcp.pose
+    
+    @property
+    def right_hand_tcp_pos(self) -> np.ndarray:
+        return self.right_hand_tcp.pose.p
+
+    @property
+    def left_hand_tcp_pos(self) -> np.ndarray:
+        return self.left_hand_tcp.pose.p
