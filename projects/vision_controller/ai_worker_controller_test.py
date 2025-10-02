@@ -259,6 +259,58 @@ def make_axis_gizmo(scene: sapien.Scene, scale=0.08, name="tcp_axis"):
 
     return builder.build_kinematic(name=name)  # KinematicActor 반환
 
+# 왼팔 FK 함수: q_group(왼팔만) 넣으면 [hand(xyz), elbow(xyz)] 6D 벡터 반환
+def error_vec(robot, q_group, hand_target, elbow_target, arm_idx ,hand, elbow):
+    # q 반영
+    set_group_q(robot, arm_idx, q_group)
+
+    # 현재 상태 (np 보장)
+    ph = link_pos_np(hand)
+    Rh = link_R_np(hand)
+    pe = link_pos_np(elbow)
+
+    # 목표 파싱
+    ph_des, Rh_des = parse_target_pose_optional_orientation(hand, hand_target)
+    pe_des = np.asarray(elbow_target, float).reshape(3)
+
+    # 위치 오차
+    e_h_pos = ph_des - ph
+    e_e_pos = pe_des - pe
+
+    # 오리엔테이션 오차 (선택)
+    if Rh_des is not None:
+        e_h_ori = ori_err_vec(Rh, Rh_des)  # (3,)
+        e = np.hstack([e_h_pos, e_h_ori, e_e_pos])
+    else:
+        e = np.hstack([e_h_pos, e_e_pos])
+    return e.astype(float)
+
+# --- IK 1스텝 (오차기반 DLS) ---
+def ik_step(robot, q_group, hand_target, elbow_target, arm_idx, hand, elbow, q_lo, q_hi, lam=1e-3, alpha=0.7):
+    err_func = lambda q: error_vec(robot, q, hand_target, elbow_target, arm_idx, hand, elbow)
+    e = err_func(q_group).reshape(-1)
+    J = numerical_jacobian_error(err_func, q_group)  # (m, n), m=6 or 9
+    # DLS: q <- q - alpha * (J^T J + lambda I)^-1 J^T e
+    JT = J.T
+    A = JT @ J + lam * np.eye(J.shape[1])
+    b = JT @ e
+    dq = np.linalg.solve(A, b)
+    q_next = q_group + (-alpha) * dq
+    # 조인트 제한
+    q_next = np.minimum(np.maximum(q_next, q_lo), q_hi)
+    return q_next, float(np.linalg.norm(e))
+
+def solve_arm_to_targets(robot, q_init, hand_target, elbow_target, arm_idx, hand, elbow, q_lo, q_hi, iters=80, tol=2e-3):
+    q = q_init.copy()
+    best = (q.copy(), 1e9)
+    for _ in range(iters):
+        q, e = ik_step(robot, q, hand_target, elbow_target, arm_idx, hand, elbow, q_lo, q_hi, lam=1e-3, alpha=0.7)
+        if e < best[1]:
+            best = (q.copy(), e)
+        if e < tol:
+            break
+    return best[0], best[1]
+
 def main():
     # === 환경 설정 ===
     env = gym.make(
@@ -335,62 +387,17 @@ def main():
     left_arm_joint_names = [f"arm_l_joint{i}" for i in range(1, 8)]
     left_arm_idx = pick_group_indices_by_names(robot, left_arm_joint_names)
 
+    right_arm_joint_names = [f"arm_r_joint{i}" for i in range(1, 8)]
+    right_arm_idx = pick_group_indices_by_names(robot, right_arm_joint_names)
+
     # 왼팔 조인트 제한(전체에서 골라옴)
     q_lo_all, q_hi_all = get_q_limits_np(robot)
     q_lo_l = q_lo_all[left_arm_idx]
     q_hi_l = q_hi_all[left_arm_idx]
 
-    # 왼팔 FK 함수: q_group(왼팔만) 넣으면 [hand(xyz), elbow(xyz)] 6D 벡터 반환
-    def left_error_vec(q_group, hand_target, elbow_target):
-        # q 반영
-        set_group_q(robot, left_arm_idx, q_group)
+    q_lo_r = q_lo_all[right_arm_idx]
+    q_hi_r = q_hi_all[right_arm_idx]
 
-        # 현재 상태 (np 보장)
-        ph = link_pos_np(l_hand)
-        Rh = link_R_np(l_hand)
-        pe = link_pos_np(l_elbow)
-
-        # 목표 파싱
-        ph_des, Rh_des = parse_target_pose_optional_orientation(l_hand, hand_target)
-        pe_des = np.asarray(elbow_target, float).reshape(3)
-
-        # 위치 오차
-        e_h_pos = ph_des - ph
-        e_e_pos = pe_des - pe
-
-        # 오리엔테이션 오차 (선택)
-        if Rh_des is not None:
-            e_h_ori = ori_err_vec(Rh, Rh_des)  # (3,)
-            e = np.hstack([e_h_pos, e_h_ori, e_e_pos])
-        else:
-            e = np.hstack([e_h_pos, e_e_pos])
-        return e.astype(float)
-
-    # --- 왼팔 IK 1스텝 (오차기반 DLS) ---
-    def ik_left_step(q_group, hand_target, elbow_target, lam=1e-3, alpha=0.7):
-        err_func = lambda q: left_error_vec(q, hand_target, elbow_target)
-        e = err_func(q_group).reshape(-1)
-        J = numerical_jacobian_error(err_func, q_group)  # (m, n), m=6 or 9
-        # DLS: q <- q - alpha * (J^T J + lambda I)^-1 J^T e
-        JT = J.T
-        A = JT @ J + lam * np.eye(J.shape[1])
-        b = JT @ e
-        dq = np.linalg.solve(A, b)
-        q_next = q_group + (-alpha) * dq
-        # 조인트 제한
-        q_next = np.minimum(np.maximum(q_next, q_lo_l), q_hi_l)
-        return q_next, float(np.linalg.norm(e))
-
-    def solve_left_arm_to_targets(q_init, hand_target, elbow_target, iters=80, tol=2e-3):
-        q = q_init.copy()
-        best = (q.copy(), 1e9)
-        for _ in range(iters):
-            q, e = ik_left_step(q, hand_target, elbow_target, lam=1e-3, alpha=0.7)
-            if e < best[1]:
-                best = (q.copy(), e)
-            if e < tol:
-                break
-        return best[0], best[1]
 
 
     l_hand_axis = make_axis_gizmo(env.scene, scale=0.3, name="left_hand_tcp_axis")
@@ -402,53 +409,46 @@ def main():
     time_now = time.time()
     while True:
 
-        # # # 3초마다 목표 변경
-        left_arm_qpos = left_arm_controller.qpos.cpu()[0].detach().numpy()
-        left_hand_pan_qpos = left_hand_pan_controller.qpos.cpu()[0].detach().numpy()
-        right_arm_qpos = right_arm_controller.qpos.cpu()[0].detach().numpy()
-        right_hand_pan_qpos = right_hand_pan_controller.qpos.cpu()[0].detach().numpy()
-        gripper_l1_controller_qpos = gripper_l1_controller.qpos.cpu()[0].detach().numpy()
-        gripper_r1_controller_qpos = gripper_r1_controller.qpos.cpu()[0].detach().numpy()
-        gripper_l2_controller_qpos = gripper_l2_controller.qpos.cpu()[0].detach().numpy()
-        gripper_r2_controller_qpos = gripper_r2_controller.qpos.cpu()[0].detach().numpy()
-        lift_qpos = lift_controller.qpos.cpu()[0].detach().numpy()
-        head_qpos = head_controller.qpos.cpu()[0].detach().numpy()
-        base_qpos = base_controller.qpos.cpu()[0].detach().numpy()
-        
         if time.time() - time_now > 3:
             time_now = time.time()
 
-            # 1) 타겟 정하기 (예시: 현재에서 약간 이동)
             l_hand_now = l_hand.pose.p
             l_elbow_now = l_elbow.pose.p
+            r_hand_now = r_hand.pose.p
+            r_elbow_now = r_elbow.pose.p
 
             if flag:
-                target_hand = l_hand_now + np.array([0.10, 0.05, 0.05])   # +x,+y,+z 오프셋
-                target_elbow = l_elbow_now + np.array([0.00, -0.05, 0.05])
+                target_l_hand = l_hand_now + np.array([0.10, 0.05, 0.05])   # +x,+y,+z 오프셋
+                target_l_elbow = l_elbow_now + np.array([0.00, -0.05, 0.05])
+                target_r_hand = {"pos" : r_hand_now + np.array([0.0, 0.0, 0.0]), "quat": [0.7071, 0, 0, -0.707]}  
+                target_r_elbow = r_elbow_now
                 flag = False
             else:
-                target_hand = l_hand_now + np.array([-0.10, -0.05, -0.05])
-                target_elbow = l_elbow_now + np.array([0.00, 0.05, -0.05])
+                target_l_hand = l_hand_now + np.array([-0.10, -0.05, -0.05])
+                target_l_elbow = l_elbow_now + np.array([0.00, 0.05, -0.05])
+                target_r_hand = {"pos" : r_hand_now + np.array([0.0, 0.0, 0.0]), "quat": [1.0, 0, 0.0, 0]}  
+                target_r_elbow = r_elbow_now
                 flag = True
 
             # 2) 현재 왼팔 q를 가져와 IK 초기값으로 사용
             q_l_now = get_group_q(robot, left_arm_idx)
+            q_r_now = get_group_q(robot, right_arm_idx)
 
             # 3) IK로 왼팔 조인트 계산
-            q_l_sol, err = solve_left_arm_to_targets(q_l_now, target_hand, target_elbow, iters=80, tol=2e-3)
+            q_l_sol, err = solve_arm_to_targets(robot, q_l_now, target_l_hand, target_l_elbow, left_arm_idx, l_hand, l_elbow, q_lo_l, q_hi_l, iters=80, tol=2e-3)
+            q_r_sol, err = solve_arm_to_targets(robot, q_r_now, target_r_hand, target_r_elbow, right_arm_idx, r_hand, r_elbow, q_lo_r, q_hi_r, iters=80, tol=2e-3)
             l_arm_sol = q_l_sol[:6]
             l_hand_pan_sol = q_l_sol[6:7]
+            r_arm_sol = q_r_sol[:6]
+            r_hand_pan_sol = q_r_sol[6:7]
 
             # 4) all_qpos에 반영 (나머지 그룹은 기존 값 유지)
             all_qpos["arm_l"] = torch.tensor(l_arm_sol, dtype=torch.float32)
             all_qpos["hand_l_pan"] = torch.tensor(l_hand_pan_sol, dtype=torch.float32)
-            print(all_qpos)
-            # (참고) 손목/헤드/리프트 등은 네가 원하던 값으로 유지하거나 조정
-            # all_qpos["hand_l_pan"] = torch.tensor([some_value], dtype=torch.float32)
+            all_qpos["arm_r"] = torch.tensor(r_arm_sol, dtype=torch.float32)
+            all_qpos["hand_r_pan"] = torch.tensor(r_hand_pan_sol, dtype=torch.float32)
             
         env.step(controller.from_action_dict(all_qpos))
-        env.render_human()
-
         r_hand_tcp_pos = r_hand.pose
         l_hand_tcp_pos = l_hand.pose
         r_elbow_tcp_pos = r_elbow.pose
