@@ -5,7 +5,7 @@ import torch
 import cv2
 from mani_skill.utils import common
 from mani_skill.envs.sapien_env import BaseEnv
-import robot.ai_worker_custom
+import ai_worker_custom
 import sapien.core as sapien
 import sapien.utils.viewer
 from transforms3d.quaternions import axangle2quat
