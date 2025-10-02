@@ -5,7 +5,7 @@ import torch
 import cv2
 from mani_skill.utils import common
 from mani_skill.envs.sapien_env import BaseEnv
-import robot.ai_worker_custom
+import custom_robot.ai_worker_custom
 import sapien.core as sapien
 import sapien.utils.viewer
 from transforms3d.quaternions import axangle2quat, quat2mat
@@ -211,53 +211,6 @@ def damped_ls(J, err, lam=1e-3):
     return np.linalg.solve(A, b)
 
 
-def make_axis_gizmo(scene: sapien.Scene, scale=0.08, name="tcp_axis"):
-    L = float(scale)        # 축 길이
-    r = L * 0.02            # 반지름
-    tip_r = r * 2           # 끝 점 구 반지름
-
-    red   = (1.0, 0.0, 0.0)
-    green = (0.0, 1.0, 0.0)
-    blue  = (0.0, 0.0, 1.0)
-
-    builder = scene.create_actor_builder()  # 시각 전용(충돌 X)
-
-    builder.add_capsule_visual(
-        pose=sapien.Pose([L/2, 0, 0]),
-        radius=r, half_length=L/2,
-        material=red
-    )
-    builder.add_sphere_visual(
-        pose=sapien.Pose([L, 0, 0]),
-        radius=tip_r,
-        material=red
-    )
-
-    q_y = axangle2quat([0, 0, 1], np.pi/2)  # wxyz
-    builder.add_capsule_visual(
-        pose=sapien.Pose([0, L/2, 0], q=q_y),
-        radius=r, half_length=L/2,
-        material=green
-    )
-    builder.add_sphere_visual(
-        pose=sapien.Pose([0, L, 0]),
-        radius=tip_r,
-        material=green
-    )
-
-    q_z = axangle2quat([0, 1, 0], -np.pi/2)
-    builder.add_capsule_visual(
-        pose=sapien.Pose([0, 0, L/2], q=q_z),
-        radius=r, half_length=L/2,
-        material=blue
-    )
-    builder.add_sphere_visual(
-        pose=sapien.Pose([0, 0, L]),
-        radius=tip_r,
-        material=blue
-    )
-
-    return builder.build_kinematic(name=name)  # KinematicActor 반환
 
 # 왼팔 FK 함수: q_group(왼팔만) 넣으면 [hand(xyz), elbow(xyz)] 6D 벡터 반환
 def error_vec(robot, q_group, hand_target, elbow_target, arm_idx ,hand, elbow):
@@ -310,6 +263,54 @@ def solve_arm_to_targets(robot, q_init, hand_target, elbow_target, arm_idx, hand
         if e < tol:
             break
     return best[0], best[1]
+
+def make_axis_gizmo(scene: sapien.Scene, scale=0.08, name="tcp_axis"):
+    L = float(scale)        # 축 길이
+    r = L * 0.02            # 반지름
+    tip_r = r * 2           # 끝 점 구 반지름
+
+    red   = (1.0, 0.0, 0.0)
+    green = (0.0, 1.0, 0.0)
+    blue  = (0.0, 0.0, 1.0)
+
+    builder = scene.create_actor_builder()  # 시각 전용(충돌 X)
+
+    builder.add_capsule_visual(
+        pose=sapien.Pose([L/2, 0, 0]),
+        radius=r, half_length=L/2,
+        material=red
+    )
+    builder.add_sphere_visual(
+        pose=sapien.Pose([L, 0, 0]),
+        radius=tip_r,
+        material=red
+    )
+
+    q_y = axangle2quat([0, 0, 1], np.pi/2)  # wxyz
+    builder.add_capsule_visual(
+        pose=sapien.Pose([0, L/2, 0], q=q_y),
+        radius=r, half_length=L/2,
+        material=green
+    )
+    builder.add_sphere_visual(
+        pose=sapien.Pose([0, L, 0]),
+        radius=tip_r,
+        material=green
+    )
+
+    q_z = axangle2quat([0, 1, 0], -np.pi/2)
+    builder.add_capsule_visual(
+        pose=sapien.Pose([0, 0, L/2], q=q_z),
+        radius=r, half_length=L/2,
+        material=blue
+    )
+    builder.add_sphere_visual(
+        pose=sapien.Pose([0, 0, L]),
+        radius=tip_r,
+        material=blue
+    )
+
+    return builder.build_kinematic(name=name)
 
 def main():
     # === 환경 설정 ===
