@@ -183,6 +183,7 @@ class PoseController:
             if res.pose_landmarks:
                 lm = res.pose_landmarks.landmark
                 center = sum((self._get_3d(lm, i) for i in [11, 12, 23, 24])) / 4
+                init_point = {i: self._get_3d(lm, i) for i in [11, 12, 13, 14, 15, 16, 17, 18, 23, 24]}
 
                 if not self.origin_set:
                     inside = all(b.contains(lm, self.W, self.H) for b in self.boxes)
@@ -203,29 +204,18 @@ class PoseController:
                             2
                         )
                         if elapsed >= self.INIT_DURATION:
-                            self.origin_point = center
-                            self.L1 = np.linalg.norm(self._get_3d(lm, 13) - self._get_3d(lm, 11))
-                            self.L2 = np.linalg.norm(self._get_3d(lm, 15) - self._get_3d(lm, 13))
+                            self.origin_point = init_point
                             self.origin_set = True
                     else:
                         self.init_start = None
 
                 else:
                     joints = {
-                        i: self._ema(i, self._get_3d(lm, i) - self.origin_point)
-                        for i in [11, 12, 13, 14, 15, 16, 23, 24]
+                        i: self._ema(i, self._get_3d(lm, i) - self.origin_point[i])
+                        for i in [11, 12, 13, 14, 15, 16, 17, 18, 23, 24]
                     }
-                    if self.L1 and self.L2:
-                        for s, t, L in [(11, 13, self.L1), (13, 15, self.L2)]:
-                            d = joints[t] - joints[s]
-                            n = np.linalg.norm(d)
-                            if n > 1e-6:
-                                joints[t] = joints[s] + d / n * L
 
-                    if self.enable_plot:
-                        self._plot3d(joints)
-
-                    segments = [(11, 13), (13, 15), (12, 14), (14, 16)]
+                    segments = [(11, 13), (13, 15), (15, 17), (12, 14), (14, 16), (16, 18)]
                     names = ["LShoulder", "LElbow", "LWrist",
                              "RShoulder", "RElbow", "RWrist"]
                     idxs = [11, 13, 15, 12, 14, 16]
@@ -234,27 +224,27 @@ class PoseController:
                         v = self._norm_vec(joints[s], joints[t])
                         axis, ang = self._rot_axis_angle(np.array([1, 0, 0]), v)
                         q = self._axis_angle_to_quat(axis, ang)
-                        angles.append(self._quat_to_euler(q))
+                        angles.append(q)
 
-                    for name, idx_pt, euler in zip(names, idxs, angles):
+                    for name, idx_pt, quat in zip(names, idxs, angles):
                         coord = joints[idx_pt]
-                        roll, pitch, yaw = np.degrees(euler)
+                        w , x, y, z = quat
                         px, py = int(lm[idx_pt].x * self.W), int(lm[idx_pt].y * self.H)
                         cv2.putText(
                             frame,
                             f"{name} ({coord[0]:.2f},{coord[1]:.2f},{coord[2]:.2f})",
                             (px + 5, py - 5),
                             cv2.FONT_HERSHEY_SIMPLEX,
-                            0.4,
+                            0.8,
                             (255, 255, 255),
                             1
                         )
                         cv2.putText(
                             frame,
-                            f"RPY({roll:.1f},{pitch:.1f},{yaw:.1f})",
+                            f"WXYZ({w:.1f},{x:.1f},{y:.1f},{z:.1f})",
                             (px + 5, py + 10),
                             cv2.FONT_HERSHEY_SIMPLEX,
-                            0.4,
+                            0.8,
                             (255, 255, 255),
                             1
                         )
@@ -288,11 +278,11 @@ class PoseController:
         frame = cv2.flip(frame, 1)
         rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         res = self.pose.process(rgb)
-        angles_dict = None
+        axis_dict = None
 
         if res.pose_landmarks:
             lm = res.pose_landmarks.landmark
-            center = sum((self._get_3d(lm, i) for i in [11, 12, 23, 24])) / 4
+            init_point = {i: self._get_3d(lm, i) for i in [11, 12, 13, 14, 15, 16, 17, 18, 23, 24]}
 
             # Calibration phase: user holds pose inside boxes
             if not self.origin_set:
@@ -311,57 +301,50 @@ class PoseController:
                                 (0, 255, 0),
                                 2)
                     if elapsed >= self.INIT_DURATION:
-                        self.origin_point = center
-                        self.L1 = np.linalg.norm(self._get_3d(lm, 13) - self._get_3d(lm, 11))
-                        self.L2 = np.linalg.norm(self._get_3d(lm, 15) - self._get_3d(lm, 13))
+                        self.origin_point = init_point
                         self.origin_set = True
                 else:
                     self.init_start = None
             else:
                 # Compute filtered joint positions
-                joints = {i: self._ema(i, self._get_3d(lm, i) - self.origin_point)
-                          for i in [11, 12, 13, 14, 15, 16, 23, 24]}
-                # Enforce segment lengths
-                if self.L1 and self.L2:
-                    for s, t, L in [(11, 13, self.L1), (13, 15, self.L2)]:
-                        d = joints[t] - joints[s]
-                        n = np.linalg.norm(d)
-                        if n > 1e-6:
-                            joints[t] = joints[s] + d / n * L
-                # 3D plot
+                joints = {
+                        i: self._ema(i, self._get_3d(lm, i) - self.origin_point[i])
+                        for i in [11, 12, 13, 14, 15, 16, 17, 18, 23, 24]
+                    }
+    
                 if self.enable_plot:
                     self._plot3d(joints)
                 # Compute arm angles
-                segments = {'left': [(11, 13), (13, 15)],
-                            'right': [(12, 14), (14, 16)]}
-                angles_dict = {'left': [], 'right': []}
+                segments = {'left': [(11, 13), (13, 15), (15, 17)],
+                            'right': [(12, 14), (14, 16), (16, 18)]}
+                axis_dict = {'left': [], 'right': []}
                 for side, segs in segments.items():
                     for s, t in segs:
                         v = self._norm_vec(joints[s], joints[t])
                         axis, ang = self._rot_axis_angle(np.array([1, 0, 0]), v)
-                        q = self._axis_angle_to_quat(axis, ang)
-                        angles_dict[side].append(self._quat_to_euler(q))
+                        quat = self._axis_angle_to_quat(axis, ang)
+                        axis_dict[side].append(np.concatenate([joints[s], quat]))
                 # Overlay text
-                names = {'left': ['LShoulder', 'LElbow'],
-                         'right': ['RShoulder', 'RElbow']}
-                idxs = {'left': [11, 13], 'right': [12, 14]}
+                names = {'left': ['LShoulder', 'LElbow', 'LWrist'],
+                         'right': ['RShoulder', 'RElbow', 'RWrist']}
+                idxs = {'left': [11, 13, 15], 'right': [12, 14, 16]}
                 for side in ['left', 'right']:
-                    for name, idx_pt, euler in zip(names[side], idxs[side], angles_dict[side]):
+                    for name, idx_pt, quat in zip(names[side], idxs[side], axis_dict[side]):
                         coord = joints[idx_pt]
-                        roll, pitch, yaw = np.degrees(euler)
+                        w,x,y,z = quat[3], quat[4], quat[5], quat[6]
                         px, py = int(lm[idx_pt].x * self.W), int(lm[idx_pt].y * self.H)
                         cv2.putText(frame,
                                     f"{name} ({coord[0]:.2f},{coord[1]:.2f},{coord[2]:.2f})",
                                     (px + 5, py - 5),
                                     cv2.FONT_HERSHEY_SIMPLEX,
-                                    0.4,
+                                    0.8,
                                     (255, 255, 255),
                                     1)
                         cv2.putText(frame,
-                                    f"RPY({roll:.1f},{pitch:.1f},{yaw:.1f})",
+                                    f"x,y,z,w({w:.1f},{x:.1f},{y:.1f},{z:.1f})",
                                     (px + 5, py + 10),
                                     cv2.FONT_HERSHEY_SIMPLEX,
-                                    0.4,
+                                    0.8,
                                     (255, 255, 255),
                                     1)
             # Draw landmarks
@@ -370,7 +353,7 @@ class PoseController:
                 res.pose_landmarks,
                 mp.solutions.pose.POSE_CONNECTIONS
             )
-        return frame, angles_dict
+        return frame, axis_dict
 
 
 if __name__ == "__main__":
